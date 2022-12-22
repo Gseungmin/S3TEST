@@ -9,13 +9,21 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
+import androidx.core.net.toFile
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener
+import com.amazonaws.regions.Regions
+import com.amazonaws.services.s3.util.Mimetypes.getInstance
+import com.example.s3test.Constants.ACCESS_KEY
+import com.example.s3test.Constants.ACCESS_SECRET_KEY
 import com.example.s3test.databinding.ActivityUploadBinding
 import com.example.umc.adapter.ImageUploadAdapter
+import java.io.File
 
 class UploadActivity : AppCompatActivity() {
 
@@ -57,6 +65,34 @@ class UploadActivity : AppCompatActivity() {
                 else -> requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
                     PICK_IMAGE_FROM_GALLERY_PERMISSION)
             }
+        }
+
+        //사진 저장 이벤트 구현
+        binding.btnSave.setOnClickListener {
+            val intent = Intent(this, MainActivity::class.java)
+            for (uri in viewModel.datas.value!!) {
+                Log.d("item", uri.toString())
+                val realPathFromURI = getRealPathFromURI(uri)
+                Log.d("item", realPathFromURI)
+
+                intent.putExtra("file", realPathFromURI)
+
+                val file = File(realPathFromURI)
+
+                Log.d("file", file.toString())
+
+                S3Util().getInstance()
+                    ?.setKeys(ACCESS_KEY, ACCESS_SECRET_KEY)
+                    ?.setRegion(Regions.AP_NORTHEAST_2)
+                    ?.uploadWithTransferUtility(
+                        this,
+                        "aws-s3-study-bucket-ji",
+                        "s3Test",
+                        file, "test"
+                    )
+            }
+            startActivity(intent)
+            finish()
         }
     }
 
@@ -133,5 +169,25 @@ class UploadActivity : AppCompatActivity() {
                     Toast.makeText(this, "권한을 거부하셨습니다.", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    /**
+     * uri 체크
+     * */
+    private fun getRealPathFromURI(uri: Uri): String {
+        val buildName = Build.MANUFACTURER
+        if(buildName.equals("Xiaomi")) {
+            return uri.path.toString()
+        }
+
+        var columnIndex = 0
+        val proj = arrayOf(MediaStore.Images.Media.DATA)
+        var cursor = contentResolver.query(uri, proj, null, null, null)
+
+        if(cursor!!.moveToFirst()) {
+            columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+        }
+
+        return cursor.getString(columnIndex)
     }
 }

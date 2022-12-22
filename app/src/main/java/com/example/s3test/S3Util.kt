@@ -2,10 +2,12 @@ package com.example.s3test
 
 import android.content.Context
 import android.text.TextUtils
+import android.util.Log
 import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferNetworkLossHandler
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferState
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility
 import com.amazonaws.regions.Region
 import com.amazonaws.regions.Regions
@@ -40,8 +42,7 @@ class S3Util {
     ) {
         this.uploadWithTransferUtility(
             context,
-            bucketName, null, file, null,
-            listener
+            bucketName, null, file, null
         )
     }
 
@@ -51,12 +52,10 @@ class S3Util {
     fun uploadWithTransferUtility(
         context: Context?,
         bucketName: String, folder: String?, file: File,
-        listener: TransferListener?,
     ) {
         this.uploadWithTransferUtility(
             context,
             bucketName, folder, file, null,
-            listener
         )
     }
 
@@ -74,7 +73,6 @@ class S3Util {
         context: Context?,
         bucketName: String, folder: String?,
         file: File, fileName: String?,
-        listener: TransferListener?,
     ) {
         require(!(TextUtils.isEmpty(accessKey) || TextUtils.isEmpty(secretKey))) { "AccessKey & SecretKey must be not null" }
         val awsCredentials: AWSCredentials = BasicAWSCredentials(
@@ -93,7 +91,22 @@ class S3Util {
             if (TextUtils.isEmpty(fileName)) file.name else fileName,
             file
         )
-        uploadObserver.setTransferListener(listener)
+        uploadObserver.setTransferListener(object : TransferListener {
+            override fun onStateChanged(id: Int, state: TransferState) {
+                if (state == TransferState.COMPLETED) {
+                    // Handle a completed upload
+                }
+            }
+
+            override fun onProgressChanged(id: Int, current: Long, total: Long) {
+                val done = (((current.toDouble() / total) * 100.0).toInt())
+                Log.d("MYTAG", "UPLOAD - - ID: $id, percent done = $done")
+            }
+
+            override fun onError(id: Int, ex: Exception) {
+                Log.d("MYTAG", "UPLOAD ERROR - - ID: $id - - EX: ${ex.message.toString()}")
+            }
+        })
     }
 
     /**
@@ -146,5 +159,54 @@ class S3Util {
 
     private object LHolder {
         val instance = S3Util()
+    }
+
+
+    /**
+     * S3 파일 다운로드
+     *
+     * @param context    Context
+     * @param bucketName S3 버킷 내 폴더 경로(이름포함, /(슬래쉬) 맨 앞, 맨 뒤 없이)
+     * @param fileName   파일 이름
+     * @param file       저장할 Local 파일 경로
+     * @param listener   AWS S3 TransferListener
+     */
+    fun downloadWithTransferUtility(
+        context: Context?,
+        bucketName: String?, folder: String?,
+        file: File, fileName: String?
+    ) {
+        val awsCredentials: AWSCredentials = BasicAWSCredentials(
+            accessKey, secretKey
+        )
+        val s3Client = AmazonS3Client(
+            awsCredentials, region
+        )
+        val transferUtility = TransferUtility.builder()
+            .s3Client(s3Client)
+            .context(context)
+            .build()
+        TransferNetworkLossHandler.getInstance(context)
+        val downloadObserver = transferUtility.download(
+            if (TextUtils.isEmpty(folder)) bucketName else "$bucketName/$folder",
+            if (TextUtils.isEmpty(fileName)) file.name else fileName,
+            file
+        )
+        downloadObserver.setTransferListener(object : TransferListener {
+            override fun onStateChanged(id: Int, state: TransferState) {
+                if (state == TransferState.COMPLETED) {
+                    // Handle a completed upload
+                }
+            }
+
+            override fun onProgressChanged(id: Int, current: Long, total: Long) {
+                val done = (((current.toDouble() / total) * 100.0).toInt())
+                Log.d("MYTAG", "UPLOAD - - ID: $id, percent done = $done")
+            }
+
+            override fun onError(id: Int, ex: Exception) {
+                Log.d("MYTAG", "UPLOAD ERROR - - ID: $id - - EX: ${ex.message.toString()}")
+            }
+        })
     }
 }
