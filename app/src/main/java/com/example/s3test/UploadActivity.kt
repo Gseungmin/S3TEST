@@ -4,10 +4,12 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
@@ -82,5 +84,54 @@ class UploadActivity : AppCompatActivity() {
             .setNegativeButton("취소하기") { _, _ -> }
             .create()
             .show()
+    }
+
+    /**
+     * 사진 선택(갤러리에서 나온) 이후 실행되는 함수
+     */
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PICK_IMAGE_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
+            val list = mutableListOf<Uri>()
+
+            data?.let { it ->
+                if (it.clipData != null) {   // 사진을 여러개 선택한 경우
+                    val count = it.clipData!!.itemCount
+                    if (count > 4) {
+                        Toast.makeText(this@UploadActivity, "사진은 4장까지 선택 가능합니다.", Toast.LENGTH_SHORT)
+                            .show()
+                        return
+                    }
+                    for (i in 0 until count) {
+                        val imageUri = it.clipData!!.getItemAt(i).uri
+                        list.add(imageUri)
+                    }
+                } else {      // 1장 선택한 경우
+                    val imageUri = it.data!!
+                    list.add(imageUri)
+                }
+            }
+            viewModel.setImage(list)
+        }
+    }
+
+    /**
+     * 권한 요청 승인 이후 실행되는 함수
+     */
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            PICK_IMAGE_FROM_GALLERY_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                    showGallery(this@UploadActivity)
+                else
+                    Toast.makeText(this, "권한을 거부하셨습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

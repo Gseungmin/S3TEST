@@ -37,6 +37,9 @@ android {
 
 dependencies {
 
+    //AWS
+    implementation 'com.amazonaws:aws-android-sdk-s3:2.13.5'
+
     //coil
     implementation("io.coil-kt:coil:2.2.2")
 
