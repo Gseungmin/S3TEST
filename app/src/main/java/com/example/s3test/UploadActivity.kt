@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
@@ -23,6 +24,7 @@ import com.example.s3test.Constants.ACCESS_KEY
 import com.example.s3test.Constants.ACCESS_SECRET_KEY
 import com.example.s3test.databinding.ActivityUploadBinding
 import com.example.umc.adapter.ImageUploadAdapter
+import kotlinx.coroutines.delay
 import java.io.File
 
 class UploadActivity : AppCompatActivity() {
@@ -67,30 +69,30 @@ class UploadActivity : AppCompatActivity() {
             }
         }
 
+        val intent = Intent(this, MainActivity::class.java)
         //사진 저장 이벤트 구현
         binding.btnSave.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
             for (uri in viewModel.datas.value!!) {
                 Log.d("item", uri.toString())
                 val realPathFromURI = getRealPathFromURI(uri)
                 Log.d("item", realPathFromURI)
 
                 intent.putExtra("file", realPathFromURI)
-
                 val file = File(realPathFromURI)
 
-                Log.d("file", file.toString())
+                Log.d("fileROOT", file.toString())
 
                 S3Util().getInstance()
                     ?.setKeys(ACCESS_KEY, ACCESS_SECRET_KEY)
                     ?.setRegion(Regions.AP_NORTHEAST_2)
                     ?.uploadWithTransferUtility(
                         this,
-                        "aws-s3-study-bucket-ji",
-                        "s3Test",
-                        file, "test"
+                        "aws-s3-study-bucket-ji", file, "test"
                     )
             }
+        }
+
+        binding.back.setOnClickListener {
             startActivity(intent)
             finish()
         }

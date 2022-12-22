@@ -1,17 +1,29 @@
 package com.example.s3test
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import com.amazonaws.auth.AWSCredentials
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferNetworkLossHandler
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferState
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility
+import com.amazonaws.regions.Region
 import com.amazonaws.regions.Regions
+import com.amazonaws.services.s3.AmazonS3Client
+import com.example.s3test.Constants.ACCESS_KEY
+import com.example.s3test.Constants.ACCESS_SECRET_KEY
 import com.example.s3test.databinding.ActivityMainBinding
 import com.example.s3test.databinding.ActivityUploadBinding
 import com.example.umc.adapter.CardStackAdapter
@@ -49,19 +61,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         val intent = getIntent()
-        val file = File(intent.getStringExtra("file"))
+        val file = File("/storage/emulated/0/Pictures/" + "test.jpg")
+//        val file = File(intent.getStringExtra("file"))
         Log.d("file", file.toString())
 
-        val downloadWithTransferUtility = S3Util().getInstance()
-            ?.setKeys(Constants.ACCESS_KEY, Constants.ACCESS_SECRET_KEY)
-            ?.setRegion(Regions.AP_NORTHEAST_2)
-            ?.downloadWithTransferUtility(
-                this,
-                "aws-s3-study-bucket-ji",
-                "s3Test", file, "test"
-            )
-        Log.d("file", downloadWithTransferUtility.toString())
-        }
+        downloadWithTransferUtility(this,
+            "aws-s3-study-bucket-ji",
+            "test", file)
+    }
 
     private fun connectCardStackView(
         imageList: MutableList<Image>,
@@ -114,5 +121,54 @@ class MainActivity : AppCompatActivity() {
         }
 
         return cursor.getString(columnIndex)
+    }
+
+    /**
+     * S3 파일 다운로드
+     *
+     * @param context    Context
+     * @param bucketName S3 버킷 내 폴더 경로(이름포함, /(슬래쉬) 맨 앞, 맨 뒤 없이)
+     * @param fileName   파일 이름
+     * @param file       저장할 Local 파일 경로
+     * @param listener   AWS S3 TransferListener
+     */
+    fun downloadWithTransferUtility(
+        context: Context?,
+        bucketName: String?,
+        fileName: String?,
+        file: File
+    ) {
+
+        val awsCredentials: AWSCredentials = BasicAWSCredentials(
+            ACCESS_KEY, ACCESS_SECRET_KEY
+        )
+        val s3Client = AmazonS3Client(
+            awsCredentials, Region.getRegion(Regions.AP_NORTHEAST_2)
+        )
+        val transferUtility = TransferUtility.builder()
+            .s3Client(s3Client)
+            .context(context)
+            .build()
+        TransferNetworkLossHandler.getInstance(context)
+
+        val downloadObserver = transferUtility.download(
+            bucketName, fileName, file
+        )
+        downloadObserver.setTransferListener(object : TransferListener {
+            override fun onStateChanged(id: Int, state: TransferState) {
+                if (state == TransferState.COMPLETED) {
+                    Log.d("AWS", "DOWNLOAD Completed!")
+                }
+            }
+
+            override fun onProgressChanged(id: Int, current: Long, total: Long) {
+                val done = (((current.toDouble() / total) * 100.0).toInt())
+                Log.d("MYTAG", "UPLOAD - - ID: $id, percent done = $done")
+            }
+
+            override fun onError(id: Int, ex: Exception) {
+                Log.d("MYTAG", "UPLOAD ERROR - - ID: $id - - EX: ${ex.message.toString()}")
+            }
+        })
     }
 }
