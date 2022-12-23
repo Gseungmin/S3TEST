@@ -39,7 +39,6 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
-        <service android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService" android:enabled="true"/>
     </application>
 
 </manifest>

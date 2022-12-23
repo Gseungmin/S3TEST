@@ -32,33 +32,6 @@ class S3Util {
         region = Region.getRegion(Regions.AP_NORTHEAST_2)
     }
 
-//    /**
-//     * Overloading
-//     */
-//    fun uploadWithTransferUtility(
-//        context: Context?,
-//        bucketName: String, file: File,
-//        listener: TransferListener?,
-//    ) {
-//        this.uploadWithTransferUtility(
-//            context,
-//            bucketName, null, file, null
-//        )
-//    }
-//
-//    /**
-//     * Overloading
-//     */
-//    fun uploadWithTransferUtility(
-//        context: Context?,
-//        bucketName: String, folder: String?, file: File,
-//    ) {
-//        this.uploadWithTransferUtility(
-//            context,
-//            bucketName, folder, file, null,
-//        )
-//    }
-
     /**
      * S3 파일 업로드
      *
@@ -118,34 +91,10 @@ class S3Util {
     }
 
     /**
-     * Access Key 설정
-     */
-    fun setAccessKey(accessKey: String): S3Util? {
-        this.accessKey = accessKey
-        return this
-    }
-
-    /**
-     * Secret Key 설정
-     */
-    fun setSecretKey(secretKey: String): S3Util? {
-        this.secretKey = secretKey
-        return this
-    }
-
-    /**
      * Region Enum 으로 Region 설정
      */
     fun setRegion(regionName: Regions?): S3Util? {
         region = Region.getRegion(regionName)
-        return this
-    }
-
-    /**
-     * Region Class 로 Region 설정
-     */
-    fun setRegion(region: Region?): S3Util? {
-        this.region = region
         return this
     }
 
@@ -159,53 +108,4 @@ class S3Util {
     private object LHolder {
         val instance = S3Util()
     }
-
-
-//    /**
-//     * S3 파일 다운로드
-//     *
-//     * @param context    Context
-//     * @param bucketName S3 버킷 내 폴더 경로(이름포함, /(슬래쉬) 맨 앞, 맨 뒤 없이)
-//     * @param fileName   파일 이름
-//     * @param file       저장할 Local 파일 경로
-//     * @param listener   AWS S3 TransferListener
-//     */
-//    fun downloadWithTransferUtility(
-//        context: Context?,
-//        bucketName: String?, folder: String?,
-//        file: File, fileName: String?
-//    ) {
-//        val awsCredentials: AWSCredentials = BasicAWSCredentials(
-//            accessKey, secretKey
-//        )
-//        val s3Client = AmazonS3Client(
-//            awsCredentials, region
-//        )
-//        val transferUtility = TransferUtility.builder()
-//            .s3Client(s3Client)
-//            .context(context)
-//            .build()
-//        TransferNetworkLossHandler.getInstance(context)
-//        val downloadObserver = transferUtility.download(
-//            if (TextUtils.isEmpty(folder)) bucketName else "$bucketName/$folder",
-//            if (TextUtils.isEmpty(fileName)) file.name else fileName,
-//            file
-//        )
-//        downloadObserver.setTransferListener(object : TransferListener {
-//            override fun onStateChanged(id: Int, state: TransferState) {
-//                if (state == TransferState.COMPLETED) {
-//                    // Handle a completed upload
-//                }
-//            }
-//
-//            override fun onProgressChanged(id: Int, current: Long, total: Long) {
-//                val done = (((current.toDouble() / total) * 100.0).toInt())
-//                Log.d("MYTAG", "UPLOAD - - ID: $id, percent done = $done")
-//            }
-//
-//            override fun onError(id: Int, ex: Exception) {
-//                Log.d("MYTAG", "UPLOAD ERROR - - ID: $id - - EX: ${ex.message.toString()}")
-//            }
-//        })
-//    }
 }

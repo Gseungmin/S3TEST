@@ -69,18 +69,12 @@ class UploadActivity : AppCompatActivity() {
             }
         }
 
-        val intent = Intent(this, MainActivity::class.java)
         //사진 저장 이벤트 구현
         binding.btnSave.setOnClickListener {
             for (uri in viewModel.datas.value!!) {
-                Log.d("item", uri.toString())
                 val realPathFromURI = getRealPathFromURI(uri)
-                Log.d("item", realPathFromURI)
 
-                intent.putExtra("file", realPathFromURI)
                 val file = File(realPathFromURI)
-
-                Log.d("fileROOT", file.toString())
 
                 S3Util().getInstance()
                     ?.setKeys(ACCESS_KEY, ACCESS_SECRET_KEY)
@@ -93,6 +87,7 @@ class UploadActivity : AppCompatActivity() {
         }
 
         binding.back.setOnClickListener {
+            val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish()
         }
@@ -174,7 +169,7 @@ class UploadActivity : AppCompatActivity() {
     }
 
     /**
-     * uri 체크
+     * File Uri path
      * */
     private fun getRealPathFromURI(uri: Uri): String {
         val buildName = Build.MANUFACTURER

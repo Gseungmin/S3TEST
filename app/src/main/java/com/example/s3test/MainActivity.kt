@@ -60,10 +60,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        val intent = getIntent()
         val file = File("/storage/emulated/0/Pictures/" + "test.jpg")
-//        val file = File(intent.getStringExtra("file"))
-        Log.d("file", file.toString())
 
         downloadWithTransferUtility(this,
             "aws-s3-study-bucket-ji",
@@ -102,26 +99,6 @@ class MainActivity : AppCompatActivity() {
             override fun onCardDisappeared(view: View?, position: Int) {
             }
         })
-
-    /**
-     * uri 체크
-     * */
-    private fun getRealPathFromURI(uri: Uri): String {
-        val buildName = Build.MANUFACTURER
-        if(buildName.equals("Xiaomi")) {
-            return uri.path.toString()
-        }
-
-        var columnIndex = 0
-        val proj = arrayOf(MediaStore.Images.Media.DATA)
-        var cursor = contentResolver.query(uri, proj, null, null, null)
-
-        if(cursor!!.moveToFirst()) {
-            columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-        }
-
-        return cursor.getString(columnIndex)
-    }
 
     /**
      * S3 파일 다운로드
